@@ -1,0 +1,6 @@
+{
+  "name": "MatchIQ — Multi-Sport Quantitative Analytics & Prediction Platform",
+  "description": "Institutional multi-sport statistical modeling, probability calibration, bookmaker odds overround analysis, AI contextual insights, and simulated paper-betting platform for Football, Tennis, Basketball, and Volleyball.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

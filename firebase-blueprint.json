@@ -1,0 +1,205 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Public non-PII profile information for a MatchIQ analyst.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "defaultSport": {
+          "type": "string",
+          "enum": ["all", "football", "tennis", "basketball", "volleyball"],
+          "maxLength": 32
+        },
+        "minEvThreshold": {
+          "type": "number"
+        },
+        "minModelReliability": {
+          "type": "number"
+        },
+        "stakingStrategy": {
+          "type": "string",
+          "enum": ["flat", "kelly_fractional", "percentage"],
+          "maxLength": 32
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "displayName", "defaultSport", "minEvThreshold", "minModelReliability", "stakingStrategy", "createdAt", "updatedAt"]
+    },
+    "UserPrivateInfo": {
+      "title": "UserPrivateInfo",
+      "description": "Isolated PII record containing user email address.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 254
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "createdAt"]
+    },
+    "LockedPrediction": {
+      "title": "LockedPrediction",
+      "description": "Immutable pre-match prediction record saved before match start.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "matchId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "sport": {
+          "type": "string",
+          "enum": ["football", "tennis", "basketball", "volleyball"],
+          "maxLength": 32
+        },
+        "marketKey": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "selection": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "modelProbability": {
+          "type": "number"
+        },
+        "decimalOdds": {
+          "type": "number"
+        },
+        "expectedValue": {
+          "type": "number"
+        },
+        "modelVersion": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "won", "lost", "push"],
+          "maxLength": 16
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "matchId", "sport", "marketKey", "selection", "modelProbability", "decimalOdds", "expectedValue", "modelVersion", "status", "createdAt"]
+    },
+    "SimulatedBetRecord": {
+      "title": "SimulatedBetRecord",
+      "description": "Hypothetical paper-betting ledger entry owned by a specific user.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "matchId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "matchLabel": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "sport": {
+          "type": "string",
+          "enum": ["football", "tennis", "basketball", "volleyball"],
+          "maxLength": 32
+        },
+        "marketName": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "selection": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "stake": {
+          "type": "number"
+        },
+        "decimalOdds": {
+          "type": "number"
+        },
+        "modelProbability": {
+          "type": "number"
+        },
+        "expectedValue": {
+          "type": "number"
+        },
+        "stakingStrategy": {
+          "type": "string",
+          "enum": ["flat", "kelly_fractional", "percentage"],
+          "maxLength": 32
+        },
+        "status": {
+          "type": "string",
+          "enum": ["open", "won", "lost", "push"],
+          "maxLength": 16
+        },
+        "profitLoss": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "matchId", "matchLabel", "sport", "marketName", "selection", "stake", "decimalOdds", "modelProbability", "expectedValue", "stakingStrategy", "status", "profitLoss", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User preferences and non-PII analytical settings."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/UserPrivateInfo" },
+      "description": "Isolated PII storage for the user's email address."
+    },
+    "/locked_predictions/{predictionId}": {
+      "schema": { "$ref": "#/entities/LockedPrediction" },
+      "description": "Immutable pre-match prediction records owned by users."
+    },
+    "/simulated_bets/{betId}": {
+      "schema": { "$ref": "#/entities/SimulatedBetRecord" },
+      "description": "Paper-betting simulation records owned by users."
+    }
+  }
+}

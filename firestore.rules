@@ -1,0 +1,175 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 4.1: Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Hardened Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation Blueprint: UserProfile (/users/{userId})
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'displayName', 'defaultSport', 'minEvThreshold', 'minModelReliability', 'stakingStrategy', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'displayName', 'defaultSport', 'minEvThreshold', 'minModelReliability', 'stakingStrategy', 'createdAt', 'updatedAt'])
+        && data.uid == request.auth.uid
+        && data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100
+        && data.defaultSport is string && data.defaultSport.size() <= 32 && data.defaultSport in ['all', 'football', 'tennis', 'basketball', 'volleyball']
+        && data.minEvThreshold is number && data.minEvThreshold >= -0.5 && data.minEvThreshold <= 1.0
+        && data.minModelReliability is number && data.minModelReliability >= 0.0 && data.minModelReliability <= 1.0
+        && data.stakingStrategy is string && data.stakingStrategy.size() <= 32 && data.stakingStrategy in ['flat', 'kelly_fractional', 'percentage']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // Validation Blueprint: UserPrivateInfo (/users/{userId}/private/{docId})
+    function isValidUserPrivateInfo(data) {
+      return data.keys().hasAll(['uid', 'email', 'createdAt'])
+        && data.keys().hasOnly(['uid', 'email', 'createdAt'])
+        && data.uid == request.auth.uid
+        && data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 254
+        && data.createdAt is timestamp;
+    }
+
+    // Validation Blueprint: LockedPrediction (/locked_predictions/{predictionId})
+    function isValidLockedPrediction(data) {
+      return data.keys().hasAll(['userId', 'matchId', 'sport', 'marketKey', 'selection', 'modelProbability', 'decimalOdds', 'expectedValue', 'modelVersion', 'status', 'createdAt'])
+        && data.keys().hasOnly(['userId', 'matchId', 'sport', 'marketKey', 'selection', 'modelProbability', 'decimalOdds', 'expectedValue', 'modelVersion', 'status', 'createdAt'])
+        && data.userId == request.auth.uid
+        && data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 && data.userId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.matchId is string && data.matchId.size() >= 1 && data.matchId.size() <= 128 && data.matchId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.sport is string && data.sport.size() <= 32 && data.sport in ['football', 'tennis', 'basketball', 'volleyball']
+        && data.marketKey is string && data.marketKey.size() >= 1 && data.marketKey.size() <= 64
+        && data.selection is string && data.selection.size() >= 1 && data.selection.size() <= 120
+        && data.modelProbability is number && data.modelProbability > 0.0 && data.modelProbability < 1.0
+        && data.decimalOdds is number && data.decimalOdds > 1.0 && data.decimalOdds <= 1000.0
+        && data.expectedValue is number && data.expectedValue >= -1.0 && data.expectedValue <= 50.0
+        && data.modelVersion is string && data.modelVersion.size() >= 1 && data.modelVersion.size() <= 64
+        && data.status is string && data.status.size() <= 16 && data.status == 'pending'
+        && data.createdAt is timestamp;
+    }
+
+    // Validation Blueprint: SimulatedBetRecord (/simulated_bets/{betId})
+    function isValidSimulatedBet(data) {
+      return data.keys().hasAll(['userId', 'matchId', 'matchLabel', 'sport', 'marketName', 'selection', 'stake', 'decimalOdds', 'modelProbability', 'expectedValue', 'stakingStrategy', 'status', 'profitLoss', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['userId', 'matchId', 'matchLabel', 'sport', 'marketName', 'selection', 'stake', 'decimalOdds', 'modelProbability', 'expectedValue', 'stakingStrategy', 'status', 'profitLoss', 'createdAt', 'updatedAt'])
+        && data.userId == request.auth.uid
+        && data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 && data.userId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.matchId is string && data.matchId.size() >= 1 && data.matchId.size() <= 128 && data.matchId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.matchLabel is string && data.matchLabel.size() >= 1 && data.matchLabel.size() <= 160
+        && data.sport is string && data.sport.size() <= 32 && data.sport in ['football', 'tennis', 'basketball', 'volleyball']
+        && data.marketName is string && data.marketName.size() >= 1 && data.marketName.size() <= 80
+        && data.selection is string && data.selection.size() >= 1 && data.selection.size() <= 120
+        && data.stake is number && data.stake > 0.0 && data.stake <= 1000000.0
+        && data.decimalOdds is number && data.decimalOdds > 1.0 && data.decimalOdds <= 1000.0
+        && data.modelProbability is number && data.modelProbability > 0.0 && data.modelProbability < 1.0
+        && data.expectedValue is number && data.expectedValue >= -1.0 && data.expectedValue <= 50.0
+        && data.stakingStrategy is string && data.stakingStrategy.size() <= 32 && data.stakingStrategy in ['flat', 'kelly_fractional', 'percentage']
+        && data.status is string && data.status.size() <= 16 && data.status in ['open', 'won', 'lost', 'push']
+        && data.profitLoss is number && data.profitLoss >= -1000000.0 && data.profitLoss <= 10000000.0
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // Collection 1: /users/{userId}
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+      allow create: if isVerifiedUser()
+        && isOwner(userId)
+        && isValidId(userId)
+        && isValidUserProfile(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isOwner(userId)
+        && isValidId(userId)
+        && isValidUserProfile(incoming())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'defaultSport', 'minEvThreshold', 'minModelReliability', 'stakingStrategy', 'updatedAt']);
+      allow delete: if false;
+
+      // Subcollection: Isolated PII (/users/{userId}/private/{docId})
+      match /private/{docId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(docId)
+          && get(/databases/$(database)/documents/users/$(userId)).data.uid == request.auth.uid;
+        allow list: if false;
+        allow create: if isVerifiedUser()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(docId)
+          && isValidUserPrivateInfo(incoming())
+          && incoming().createdAt == request.time
+          && get(/databases/$(database)/documents/users/$(userId)).data.uid == request.auth.uid;
+        allow update, delete: if false;
+      }
+    }
+
+    // Collection 2: Immutable Pre-Match Predictions (/locked_predictions/{predictionId})
+    match /locked_predictions/{predictionId} {
+      allow get: if isSignedIn() && isValidId(predictionId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isVerifiedUser()
+        && isValidId(predictionId)
+        && isValidLockedPrediction(incoming())
+        && incoming().createdAt == request.time;
+      // Strict immutability: historical predictions must NEVER be overwritten or deleted
+      allow update, delete: if false;
+    }
+
+    // Collection 3: Simulated Bets (/simulated_bets/{betId})
+    match /simulated_bets/{betId} {
+      allow get: if isSignedIn() && isValidId(betId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isVerifiedUser()
+        && isValidId(betId)
+        && isValidSimulatedBet(incoming())
+        && incoming().status == 'open'
+        && incoming().profitLoss == 0
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidId(betId)
+        && isValidSimulatedBet(incoming())
+        && existing().userId == request.auth.uid
+        && existing().status == 'open'
+        && incoming().userId == existing().userId
+        && incoming().matchId == existing().matchId
+        && incoming().stake == existing().stake
+        && incoming().decimalOdds == existing().decimalOdds
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().status in ['won', 'lost', 'push']
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'profitLoss', 'updatedAt']);
+      allow delete: if false;
+    }
+  }
+}
